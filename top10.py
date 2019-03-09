@@ -3,6 +3,12 @@ from flask import request
 from pprint import pprint
 from pymongo import MongoClient
 from textblob import TextBlob
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from string import punctuation
+from nltk.probability import FreqDist
+from heapq import nlargest
+from collections import defaultdict
 import json
 
 client = MongoClient('localhost', 27017)
@@ -47,3 +53,44 @@ def sentiment():
     else:
         polarity="Neutral"
     return json.dumps({'statusCode': 200,'body': polarity})
+
+def sanitize_input(data):
+    replace = {
+        ord('\f') : ' ',
+        ord('\t') : ' ',
+        ord('\n') : ' ',
+        ord('\r') : None
+    }
+    return data.translate(replace)
+
+def tokenize_content(content):
+    stop_words = set(stopwords.words('english') + list(punctuation))
+    words = word_tokenize(content.lower())    
+    return [
+        sent_tokenize(content),
+        [word for word in words if word not in stop_words]    
+    ]
+
+def score_tokens(filterd_words, sentence_tokens):
+    word_freq = FreqDist(filterd_words)
+    ranking = defaultdict(int)
+    for i, sentence in enumerate(sentence_tokens):
+        for word in word_tokenize(sentence.lower()):
+            if word in word_freq:
+                ranking[i] += word_freq[word]
+    return ranking
+def summarize(ranks, sentences):
+    k = int(len(sentences)*0.4)
+    if k==0:
+        k=1
+    indexes = nlargest(k, ranks, key=ranks.get)
+    final_sentences = [sentences[j] for j in sorted(indexes)]
+    return ' '.join(final_sentences)
+
+@app.route('/summarize',methods = ['POST'])
+def summarizer():
+    content = request.form['message']
+    content = sanitize_input(content)
+    sentence_tokens, word_tokens = tokenize_content(content)  
+    sentence_ranks = score_tokens(word_tokens, sentence_tokens)
+    return json.dumps(summarize(sentence_ranks, sentence_tokens))
