@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var AYLIENTextAPI = require('aylien_textapi');
+var socket = require('socket.io');
+
 
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://localhost:27017/";
@@ -83,6 +85,8 @@ router.post('/login', function(req, res, next) {
   });
 });
 
+
+
 router.get('/', function(req, res, next) {
   var text = 'Bandung, West Java. The Corruption Eradication Commission, better known as KPK, on Thursday launched the 2015 Anti-Corruption Festival, or Festa, in conjunction with the Bandung city government, to celebrate International Anti-Corruption Day. The festival will run until Friday. KPK acting chief Taufiqqurahman Ruki, National Police Chief Gen. Badrodin Haiti, House of Regional Representatives (DPD) Speaker Irman Gusman and Attorney General H.M. Prasetyo were to be joined by Political, Legal and Security Affairs Minister Luhut Panjaitan, Justice and Human Rights Minister Yasonna Laoly, Health Minister Nina Moeloek and Industry Minister Saleh Husin at the event. The KPK\'s Ruki opened the event on Thursday with a speech calling on the House to reconsider intentions to revise the KPK law, or "face the anti-corruption community." He pointed to three key aspects to the fight against corruption — human, cultural and systematic — and said that systematic aspect were the most important, as they reflects policies and laws. “We do not name someone as a suspect because we hold a grudge against that particular person or because we are driven by political motives," he said. "We do so in the name of the law." “Graft is a crime against humanity as it is proven to bring injustice and poverty and we have to eradicate it," Luhut said. "The country\'s leaders, whether at the central or regional government level, have to be good role models in fighting graft. I would like everyone to work together for a graft-free Indonesia." Bandung was selected to host the event as the city has the highest level of public engagement, infrastructure capability and corruption prevention, compared to other cities, KPK deputy chief Adnan Pandu Praja said. The KPK hopes Festa will encourage more Indonesians to join the fight against corruption by beginning in their own neighborhood. The festival will feature theater performances, live music and other events.';
   var textapi = new AYLIENTextAPI({
@@ -112,6 +116,25 @@ router.get('/', function(req, res, next) {
   
   console.log("dasdasdasd");
   res.render('index', { title: 'Express' });
+});
+
+
+router.get('/connect', function(req, res, next) {
+  var server = req.app.get('server');
+  var io = socket(server);
+  //console.log(io);
+  console.log('called');
+  io.on('connection',function(socket){
+    console.log('made socket connection',socket.id);
+    socket.on('disconnect', function(){
+      console.log('user disconnected');
+    });
+    socket.on('chat',function(data){
+      console.log("server",data);
+      io.emit('chat',data);
+    });
+  });
+  res.send({"status":"Password or email mismatch"});
 });
 
 
