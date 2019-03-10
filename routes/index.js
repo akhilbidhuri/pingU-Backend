@@ -137,6 +137,23 @@ router.get('/connect', function(req, res, next) {
   res.send({"status":"Password or email mismatch"});
 });
 
+router.post('/team', function(req, res, next) {
+  var role = req.body.role;
+  var company = req.body.company;
+  dbo.collection("user").find({'role':role,'company':company}).toArray(function(err, result) {
+    if (err) throw err;
+    console.log(result);
+    if(result)
+    {
+      res.send(result);
+      console.log("check",result);
+    }
+    else
+    {
+      res.send({"status":"false"});
+    }   //ddb.close();
+  });
+});
 
 
 module.exports = router;
