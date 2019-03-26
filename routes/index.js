@@ -119,7 +119,7 @@ router.get('/connect', function(req, res, next) {
     });
     socket.on('chat',function(data){
       console.log("server",data);
-      dbo.collection('Ymedia').insertOne({'message':data.message,'from':data.handle,'gid':'oneorigin'},function(err, result) {
+      dbo.collection('Ymedia').insertOne({'time':data.time,'message':data.message,'from':data.handle,'gid':'oneorigin'},function(err, result) {
         //ddb.close();
         console.log("stored");
       });

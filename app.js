@@ -6,7 +6,7 @@ var logger = require('morgan');
 var cors = require('cors')
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-
+var axios = require('axios')
 var app = express();
 
 // view engine setup
@@ -34,8 +34,14 @@ app.use('/users', usersRouter);
 app.use(function(req, res, next) {
   next(createError(404));
 });
-var server = app.listen(4000, () => console.log(`Example app listening on port 4000!`))
+var server = app.listen(4000, () => {console.log(`Example app listening on port 4000!`); })
 // error handler
+app.set('server',server);
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development\
+  console.log("socket created");
+  axios.get('http://localhost:4000/connect').then(r=>console.log("-----------------------------------------------------------")).catch(e=>console.log("couldnt call"));
+});
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
