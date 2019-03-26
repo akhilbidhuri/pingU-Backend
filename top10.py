@@ -2,33 +2,53 @@ from flask import Flask
 from flask import request
 from pprint import pprint
 from pymongo import MongoClient
-from textblob import TextBlob
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from string import punctuation
 from nltk.probability import FreqDist
 from heapq import nlargest
 from collections import defaultdict
+from flask_cors import CORS,cross_origin
 import json
 
 client = MongoClient('localhost', 27017)
 db = client.mydb
+print(db)
 import json
 app = Flask(__name__)
+CORS(app, resources=r'/*')
+
+#app.config['CORS_HEADERS'] = 'Content-Type'
+
+from textblob import TextBlob
+@app.route('/',methods = ['POST'])
+@cross_origin(origin='*')
+def helloWorld():
+  return "Hello, cross-origin-world!"
+
 
 @app.route('/count',methods = ['POST'])
+@cross_origin(origin='*')
 def counter():
-    collection = db.coreal
+    dbname = request.form['company']
+    print(request.form)
+    print(dbname)
+    collection = db[dbname]
+    print(collection)
     gid = request.form['gid']
-    array = collection.find({"group": gid})
+    array = collection.find({"gid": gid})
+    print("check now")
+    s=[]
     for a in array:
-        print(a)
-    s = "this is a sample sentence showing off the stop words . remember this is just a sample sentence Sorted dict keys are maintained in sorted order. The design of sorted dict is simple: sorted dict inherits from dict to store items and maintains a sorted list of keys. Now if we use reciprocal for this word, it would certainly be close to 1 but again does not tell us about the context"
+        for w in a['message'].split(" "):
+            s.append(w)
+    #s = "this is a sample sentence showing off the stop words . remember this is just a sample sentence Sorted dict keys are maintained in sorted order. The design of sorted dict is simple: sorted dict inherits from dict to store items and maintains a sorted list of keys. Now if we use reciprocal for this word, it would certainly be close to 1 but again does not tell us about the context"
     from collections import OrderedDict
     from nltk.corpus import stopwords
     word = stopwords.words('english')
+    print(s)
     D = {}
-    for w in s.split():
+    for w in s:
         if w not in word:
             D[w]=D.get(w,0)+1
     L=[]
@@ -37,9 +57,10 @@ def counter():
     L=sorted(L,reverse=True) 
     print(L)
     if len(L)<10:
-        return(json.dumps(L))
+        return(json.dumps({"words":L}))
     else:
-        return(json.dumps(L[:10]))
+        return(json.dumps({"words":L[:10]}))
+    return(json.dumps({"words":"WRONG REQUEST BHASKAR "}))
 
 
 @app.route('/sentiment',methods = ['POST'])
@@ -94,3 +115,5 @@ def summarizer():
     sentence_tokens, word_tokens = tokenize_content(content)  
     sentence_ranks = score_tokens(word_tokens, sentence_tokens)
     return json.dumps(summarize(sentence_ranks, sentence_tokens))
+
+app.run(host='0.0.0.0')

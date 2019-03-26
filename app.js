@@ -26,6 +26,8 @@ app.use('/login', indexRouter);
 app.use('/reguser', indexRouter);
 app.use('/connect', indexRouter);
 app.use('/team', indexRouter);
+app.use('/addgroup', indexRouter);
+app.use('/group', indexRouter);
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
