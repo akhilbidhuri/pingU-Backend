@@ -2,6 +2,15 @@ var express = require('express');
 var router = express.Router();
 //var AYLIENTextAPI = require('aylien_textapi');
 var socket = require('socket.io');
+const redis = require('redis');
+
+const client = redis.createClient();
+// Print redis errors to the console
+client.on('error', (err) => {
+  console.log("Error " + err);
+});
+
+console.log("redis connected");
 
 
 var MongoClient = require('mongodb').MongoClient;

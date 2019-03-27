@@ -16,6 +16,7 @@
     "jade": "~1.11.0",
     "morgan": "~1.9.0",
     "nodejs-text-summarizer": "^2.0.3",
+    "redis": "^2.8.0",
     "socket.io": "^2.2.0"
   }
 }
