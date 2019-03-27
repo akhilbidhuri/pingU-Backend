@@ -3,8 +3,9 @@ var router = express.Router();
 //var AYLIENTextAPI = require('aylien_textapi');
 var socket = require('socket.io');
 const redis = require('redis');
-
+var axios = require('axios');
 const client = redis.createClient();
+const qs = require('qs')
 // Print redis errors to the console
 client.on('error', (err) => {
   console.log("Error " + err);
@@ -98,15 +99,15 @@ router.post('/group', function(req, res, next) {
   var gid = req.body.gid;
   var company = req.body.company;
   console.log(company);
-  dbo.collection(company).find({'gid':'oneorigin'}).toArray(function(err, result) {
+  dbo.collection(company).find({'gid':gid}).toArray(function(err, result) {
     if (err) throw err;
     if(result)
     {
-      res.send(result);
+      res.send(result.slice(0,page*10));
     }
     else
     {
-      res.send({"status":"Password or email mismatch"});
+      res.send({"status":"fail"});
     }
     //ddb.close();
   });
@@ -121,18 +122,28 @@ router.get('/connect', function(req, res, next) {
   var io = socket(server);
   //console.log(io);
   console.log('called');
+  var senti = null;
   io.on('connect',function(socket){
     console.log('made socket connection',socket.id);
     socket.on('disconnect', function(){
       console.log('user disconnected');
     });
+    
     socket.on('chat',function(data){
       console.log("server",data);
-      dbo.collection('Ymedia').insertOne({'time':data.time,'message':data.message,'from':data.handle,'gid':'oneorigin'},function(err, result) {
-        //ddb.close();
-        console.log("stored");
-      });
-      io.emit('chat',data);
+      
+      axios.post('http://localhost:5000/sentiment',qs.stringify({message:data.message}))
+      .then(r=>{
+        senti=r.data.body;
+        console.log("SENTIMENT API CALLED",r.data);
+        dbo.collection('Ymedia').insertOne({'time':data.time,'message':data.message,'from':data.handle,'gid':'oneorigin','sentiment':senti},function(err, result) {
+          //ddb.close();
+          console.log("stored");
+        });
+        io.emit('chat',data);
+    })
+      .catch(e=>console.log("couldn't call API"));
+      
     });
   });
   res.send({"status":"Password or email mismatch"});
