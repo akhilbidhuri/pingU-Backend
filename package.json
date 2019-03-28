@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "axios": "^0.18.0",
     "aylien_textapi": "^0.7.0",
     "cookie-parser": "~1.4.3",
     "cors": "^2.8.5",
@@ -14,6 +15,7 @@
     "http": "0.0.0",
     "http-errors": "~1.6.2",
     "jade": "~1.11.0",
+    "mongodb": "^3.2.2",
     "morgan": "~1.9.0",
     "nodejs-text-summarizer": "^2.0.3",
     "redis": "^2.8.0",
