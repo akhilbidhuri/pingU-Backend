@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 //var AYLIENTextAPI = require('aylien_textapi');
+var ObjectId = require('mongodb').ObjectId;
 var socket = require('socket.io');
 const redis = require('redis');
 var axios = require('axios');
@@ -32,7 +33,7 @@ router.post('/regcomp', function(req, res, next) {
     if (err) throw err;
     if(result)
     {
-      res.send({"status":"Duplicate Found"});
+      res.send({"status":"fail"});
       console.log("check",result);
     }
     else
@@ -46,7 +47,7 @@ router.post('/regcomp', function(req, res, next) {
       if (err) throw err;
       console.log(obj);
       });
-      res.send({"status":"Representative Added"});
+      res.send({"status":"success"});
     }
     //ddb.close();
   });
@@ -56,21 +57,26 @@ router.post('/reguser', function(req, res, next) {
   var name = req.body.name;
   var email = req.body.email;
   var password = req.body.password;
+  var role = req.body.role;
+  var company = req.body.company;
   var type = req.body.type;
   dbo.collection("user").findOne({'email':email}, function(err, result) {
     if (err) throw err;
     if(result)
     {
-      res.send({"status":"Duplicate Found"});
+      res.send({"status":"fail"});
       console.log("check",result);
     }
     else
     {
-      var obj = {'name':name,'email':email,'type':type,'password':password};
+      var obj = {'name':name,'email':email,'type':type,'password':password,'company':company,'role':role,'group':[]};
+      console.log(obj);
       dbo.collection("user").insertOne(obj, function(err, res) {
         if (err) throw err;
       });
-      res.send({"status":"Employee Added"});
+      console.log("added");
+      res.send({"status":"success"});
+      
     }
     //ddb.close();
   });
@@ -85,14 +91,63 @@ router.post('/login', function(req, res, next) {
     if(result && result['password']==password)
     {
       result['password']=0;
-      res.send(result);
+      res.send({"status":"success","results":result});
     }
     else
     {
-      res.send({"status":"Password or email mismatch"});
+      res.send({"status":"fail"});
     }
     //ddb.close();
   });
+});
+
+router.post('/addgroup', function(req, res, next) {
+  var gname = req.body.gname;
+  var uid = req.body.uid;
+  var gid = req.body.gid;
+  dbo.collection("groups").findOne({'gid':gid}, function(err, results) {
+    if (err) throw err;
+    var k = [];
+    if(results)
+    {
+      console.log(k);
+      k=[...results.list,uid];
+      console.log(k);
+      dbo.collection("groups").updateOne({'gid':gid},{ $set: { "list" : k } },
+        function(err, result) {
+        console.log("check");
+      });
+    }
+    else
+    {
+      var obj = {'gname':gname,'gid':gid,'list':[uid]};
+      console.log(obj);
+      dbo.collection("groups").insertOne(obj, function(err, res) {
+        if (err) throw err;
+      });
+      console.log("added");
+    }
+    console.log(uid);
+  dbo.collection("user").findOne({'_id':ObjectId(uid)}, function(err, result) {
+    console.log("HELLOOOOO");
+    if (err) throw err;
+    var k = [];
+    console.log("HELLOOOOO");
+    if(result)
+    {
+      k=[...result.group,gid];
+      console.log("---------------------cxxxxxxx-----------------------");
+      dbo.collection("user").updateOne({'_id':ObjectId(uid)},{ $set: { "group" : k } },
+        function(err, result) {
+        console.log("check",result);
+      });
+    }
+    //ddb.close();
+  });
+  res.send("success");
+    //ddb.close();
+  });
+  
 });
 
 router.post('/group', function(req, res, next) {
@@ -103,7 +158,7 @@ router.post('/group', function(req, res, next) {
     if (err) throw err;
     if(result)
     {
-      res.send(result.slice(0,page*10));
+      res.send(result);
     }
     else
     {
@@ -152,6 +207,7 @@ router.get('/connect', function(req, res, next) {
 router.post('/team', function(req, res, next) {
   var role = req.body.role;
   var company = req.body.company;
+  console.log(role,company)
   dbo.collection("user").find({'role':role,'company':company}).toArray(function(err, result) {
     if (err) throw err;
     console.log(result);
